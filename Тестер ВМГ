@@ -1,1 +1,143 @@
+#include "HX711.h"                       // библиотека тензодатчика
+#include <Wire.h>                        // Протокол I2C
+#include <LiquidCrystal_I2C.h>           // Библиотека дисплея
+HX711 scale(A1, A0);   
+
+byte bukva_B[8]   = {B11110,B10000,B10000,B11110,B10001,B10001,B11110,B00000,}; // Буква "Б"
+byte bukva_G[8]   = {B11111,B10001,B10000,B10000,B10000,B10000,B10000,B00000,}; // Буква "Г"
+byte bukva_D[8]   = {B01111,B00101,B00101,B01001,B10001,B11111,B10001,B00000,}; // Буква "Д"
+byte bukva_ZH[8]  = {B10101,B10101,B10101,B11111,B10101,B10101,B10101,B00000,}; // Буква "Ж"
+byte bukva_Z[8]   = {B01110,B10001,B00001,B00010,B00001,B10001,B01110,B00000,}; // Буква "З"
+byte bukva_I[8]   = {B10001,B10011,B10011,B10101,B11001,B11001,B10001,B00000,}; // Буква "И"
+byte bukva_IY[8]  = {B01110,B00000,B10001,B10011,B10101,B11001,B10001,B00000,}; // Буква "Й"
+byte bukva_L[8]   = {B00011,B00111,B00101,B00101,B01101,B01001,B11001,B00000,}; // Буква "Л"
+byte bukva_P[8]   = {B11111,B10001,B10001,B10001,B10001,B10001,B10001,B00000,}; // Буква "П"
+byte bukva_Y[8]   = {B10001,B10001,B10001,B01010,B00100,B01000,B10000,B00000,}; // Буква "У"
+byte bukva_F[8]   = {B00100,B11111,B10101,B10101,B11111,B00100,B00100,B00000,}; // Буква "Ф"
+byte bukva_TS[8]  = {B10010,B10010,B10010,B10010,B10010,B10010,B11111,B00001,}; // Буква "Ц"
+byte bukva_CH[8]  = {B10001,B10001,B10001,B01111,B00001,B00001,B00001,B00000,}; // Буква "Ч"
+byte bukva_Sh[8]  = {B10101,B10101,B10101,B10101,B10101,B10101,B11111,B00000,}; // Буква "Ш"
+byte bukva_Shch[8]= {B10101,B10101,B10101,B10101,B10101,B10101,B11111,B00001,}; // Буква "Щ"
+byte bukva_Mz[8]  = {B10000,B10000,B10000,B11110,B10001,B10001,B11110,B00000,}; // Буква "Ь"
+byte bukva_IYI[8] = {B10001,B10001,B10001,B11001,B10101,B10101,B11001,B00000,}; // Буква "Ы"
+byte bukva_Yu[8]  = {B10010,B10101,B10101,B11101,B10101,B10101,B10010,B00000,}; // Буква "Ю"
+byte bukva_Ya[8]  = {B01111,B10001,B10001,B01111,B00101,B01001,B10001,B00000,}; // Буква "Я"
+
+const int numReadings = 10;
+float readings[numReadings];      // Массив чтения по аналоговому входу
+int index = 0;                    // Номер текущего чтения
+float total = 0;                  // Всего считано
+float average = 0;                // Среднее
+float i = 0;// - Вывод значения на индикатор
+float a = 0;
+float currentValue = 0;
+
+//float calibration_factor = -15.9;       // калибровочная константа тензодатчика для весов 5кг
+float calibration_factor = -224.5;        // калибровочная константа тензодатчика-216.7для СТЕНДА -224,5 при длине луча 735 мм
+float units;
+
+
+LiquidCrystal_I2C lcd(0x3F,16,2);  // Устанавливаем дисплей
+
+void setup() 
+{
+ 
+  lcd.init();               // инициализация ЖК дисплея                   
+  lcd.backlight();          // Включаем подсветку дисплея
+  
+  scale.set_scale();
+  scale.tare();                              //Сбрасываем на 0
+  scale.set_scale(calibration_factor);       //Применяем калибровку
+
+  
+
+  lcd.createChar(1, bukva_Ya);      // Создаем символ под номером 1
+  lcd.createChar(2, bukva_G);       // Создаем символ под номером 2
+  lcd.createChar(3, bukva_I);       // Создаем символ под номером 3
+  
+  //lcd.setCursor(3, 0);         // перевод курсора 
+  //lcd.print("TECTEP BM\2");    // пишем ТЕСТЕР ВМГ
+ 
+  //lcd.setCursor(0, 1);    // перевод курсора на строку 1, символ 5
+  //lcd.print("T\1\2A");    // пишем Тяга
+  lcd.setCursor(14, 1);   // перевод курсора на строку 2, символ 11
+  lcd.print("\2p");    // пишем Грамм 
+
+  lcd.setCursor(6, 0);    // перевод курсора 
+  lcd.print("V");         // пишем Вольт 
+  lcd.setCursor(15, 0);   // перевод курсора 
+  lcd.print("A");         // пишем Ампер 
+  lcd.setCursor(6, 1);   // перевод курсора 
+  lcd.print("W");         // пишем Ампер 
+
+  
+}
+void loop()
+{          
+  char myStr[6];                    // текстовый массив для текста
+  
+          //Измеритель тяги 
+  
+  float ounces;
+  ounces = scale.get_units(10);               //усреднение 10 значений
+ 
+  dtostrf(ounces, 5, 0, myStr);               //Подготовка 5 знакомест
+  lcd.setCursor(8, 1);                        //Переводим курсор
+  lcd.print(myStr);                           //выводим значение грамм
+  
+          // Вольтамерметер
+    
+  uint16_t inU = analogRead(7);
+  //uint16_t inI = analogRead(6);
+
+
+  total= total - readings[index];          
+  readings[index] = analogRead(6);        // Чтение сырого значения
+  readings[index] = (readings[index]-512)*4.84/1024/0.0133;
+  
+// Процесс обработи  данных: // 117.7-Сырое значение с датчика при 0А = 0мА // 5-5v - максимум 5В // Первое 0.04-0.04V/A(чувствительность из datasheet датчика); // +0.07 - поправочный коэффициент, чтобы выставить точный ноль;
+  
+  total= total + readings[index];       
+    index = index + 1;                    
+    if (index >= numReadings)              
+      index = 0;                           
+    average = total/numReadings;   //Smoothing algorithm (http://www.arduino.cc/en/Tutorial/Smoothing)    
+    currentValue= average;
+  
+  dtostrf(currentValue, 6, 3, myStr);         //Подготовка 6 знакомест
+  lcd.setCursor(8, 0);                        //Переводим курсор
+  lcd.print(myStr);                           //выводим значение Ампер
+
+  
+  float realU = float(inU) * 0.027425;
+  //float realI = float((inI)-512) * 0.69990375; 
+  
+  dtostrf(realU, 5, 1, myStr);                //Подготовка 5 знакомест
+  lcd.setCursor(0, 0);                        //Переводим курсор
+  lcd.print(myStr);                           //выводим значение вольт
+
+  //dtostrf(realI, 5, 2, myStr);                //Подготовка 5 знакомест
+  //lcd.setCursor(9, 0);                        //Переводим курсор
+  //lcd.print(myStr);                           //выводим значение Ампер
+
+          // Считаем Мощность
+
+  float wAt = float(realU * currentValue) ;
+
+  dtostrf(wAt, 5, 1, myStr);                  //Подготовка 5 знакомест
+  lcd.setCursor(0, 1);                        //Переводим курсор
+  lcd.print(myStr);                           //выводим значение Ват
+
+         // Эффективность грамм на ват
+
+  
+  float gRwAt = float(ounces / wAt) ;
+
+  dtostrf(gRwAt, 5, 1, myStr);                  //Подготовка 5 знакомест
+  lcd.setCursor(0, 1);                          //Переводим курсор
+  lcd.print(myStr);                             //выводим значение Ват
+        
+
+ 
+}
 
