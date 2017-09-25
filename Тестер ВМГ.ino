@@ -23,19 +23,9 @@ byte bukva_IYI[8] = {B10001,B10001,B10001,B11001,B10101,B10101,B11001,B00000,}; 
 byte bukva_Yu[8]  = {B10010,B10101,B10101,B11101,B10101,B10101,B10010,B00000,}; // Буква "Ю"
 byte bukva_Ya[8]  = {B01111,B10001,B10001,B01111,B00101,B01001,B10001,B00000,}; // Буква "Я"
 
-const int numReadings = 10;
-float readings[numReadings];      // Массив чтения по аналоговому входу
-int index = 0;                    // Номер текущего чтения
-float total = 0;                  // Всего считано
-float average = 0;                // Среднее
-float i = 0;// - Вывод значения на индикатор
-float a = 0;
-float currentValue = 0;
-
 //float calibration_factor = -15.9;       // калибровочная константа тензодатчика для весов 5кг
 float calibration_factor = -224.5;        // калибровочная константа тензодатчика-216.7для СТЕНДА -224,5 при длине луча 735 мм
 float units;
-
 
 LiquidCrystal_I2C lcd(0x3F,16,2);  // Устанавливаем дисплей
 
@@ -49,25 +39,17 @@ void setup()
   scale.tare();                              //Сбрасываем на 0
   scale.set_scale(calibration_factor);       //Применяем калибровку
 
-  
-
   lcd.createChar(1, bukva_Ya);      // Создаем символ под номером 1
   lcd.createChar(2, bukva_G);       // Создаем символ под номером 2
   lcd.createChar(3, bukva_I);       // Создаем символ под номером 3
   
-  //lcd.setCursor(3, 0);         // перевод курсора 
-  //lcd.print("TECTEP BM\2");    // пишем ТЕСТЕР ВМГ
- 
-  //lcd.setCursor(0, 1);    // перевод курсора на строку 1, символ 5
-  //lcd.print("T\1\2A");    // пишем Тяга
   lcd.setCursor(15, 1);   // перевод курсора на строку 2, символ 11
-  lcd.print("\2");    // пишем Грамм 
-
+  lcd.print("\2");        // пишем Грамм 
   lcd.setCursor(6, 0);    // перевод курсора 
   lcd.print("V");         // пишем Вольт 
   lcd.setCursor(15, 0);   // перевод курсора 
   lcd.print("A");         // пишем Ампер 
-  lcd.setCursor(6, 1);   // перевод курсора 
+  lcd.setCursor(6, 1);    // перевод курсора 
   lcd.print("W");         // пишем Ампер 
 }
 void loop()
@@ -101,7 +83,7 @@ float real_u = float(total_u) / 10 * 0.027425;
      }
     else  
      {
-     gRwAt = 0.0 ;     //выводим ноль
+     gRwAt = 0.0 ;              //выводим ноль
      }
   
   
@@ -120,7 +102,7 @@ float real_u = float(total_u) / 10 * 0.027425;
   lcd.print(myStr);                             //выводим значение мощности
 
   dtostrf(real_gr, 4, 0, myStr);                //Подготовка 5 знакомест
-  lcd.setCursor(10, 1);                          //Переводим курсор
+  lcd.setCursor(10, 1);                         //Переводим курсор
   lcd.print(myStr);                             //выводим значение тяга грамм
 
   dtostrf(gRwAt, 4, 1, myStr);                  //Подготовка 5 знакомест
