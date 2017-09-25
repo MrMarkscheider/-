@@ -1,7 +1,7 @@
 #include "HX711.h"                       // библиотека тензодатчика
 #include <Wire.h>                        // Протокол I2C
 #include <LiquidCrystal_I2C.h>           // Библиотека дисплея
-HX711 scale(A1, A0);                     // Пины дляя подключения
+HX711 scale(A1, A0);   
 
 byte bukva_B[8]   = {B11110,B10000,B10000,B11110,B10001,B10001,B11110,B00000,}; // Буква "Б"
 byte bukva_G[8]   = {B11111,B10001,B10000,B10000,B10000,B10000,B10000,B00000,}; // Буква "Г"
@@ -60,8 +60,8 @@ void setup()
  
   //lcd.setCursor(0, 1);    // перевод курсора на строку 1, символ 5
   //lcd.print("T\1\2A");    // пишем Тяга
-  lcd.setCursor(14, 1);   // перевод курсора на строку 2, символ 11
-  lcd.print("\2p");    // пишем Грамм 
+  lcd.setCursor(15, 1);   // перевод курсора на строку 2, символ 11
+  lcd.print("\2");    // пишем Грамм 
 
   lcd.setCursor(6, 0);    // перевод курсора 
   lcd.print("V");         // пишем Вольт 
@@ -69,75 +69,61 @@ void setup()
   lcd.print("A");         // пишем Ампер 
   lcd.setCursor(6, 1);   // перевод курсора 
   lcd.print("W");         // пишем Ампер 
-
-  
 }
 void loop()
-{          
-  char myStr[6];                    // текстовый массив для текста
+{            
+          //Измеряем все что есть
   
-          //Измеритель тяги 
+  float total_gr = 0.0;             //Переменная тяги
+  uint16_t total_i = 0;             //переменная тока
+  uint16_t total_u = 0;             //переменная напряжения
+  for (uint8_t i = 0; i < 10; i++)  // условие  цикла сложения
+   {
+   total_gr += scale.get_units(1);   //Суммирование граммов
+   total_i += analogRead(6);         //Суммирование тока
+   total_u += analogRead(7);         //Суммирование напряжения
+   }
+
+          //вычисляем среднее значение
+          
+float real_gr = total_gr / 10;
+float real_i = (float(total_i) / 10 - 512.0)*5.0/1024/0.0133;
+float real_u = float(total_u) / 10 * 0.027425;
   
-  float ounces;
-  ounces = scale.get_units(10);               //усреднение 10 значений
- 
-  dtostrf(ounces, 5, 0, myStr);               //Подготовка 5 знакомест
-  lcd.setCursor(8, 1);                        //Переводим курсор
-  lcd.print(myStr);                           //выводим значение грамм
   
-          // Вольтамерметер
-    
-  uint16_t inU = analogRead(7);
-  //uint16_t inI = analogRead(6);
+  float wAt = float(real_i * real_u) ;     //Считаем мощность
 
-
-  total= total - readings[index];          
-  readings[index] = analogRead(6);        // Чтение сырого значения
-  readings[index] = (readings[index]-512)*4.84/1024/0.0133;
+  float gRwAt;
   
-// Процесс обработи  данных: // 117.7-Сырое значение с датчика при 0А = 0мА // 5-5v - максимум 5В // Первое 0.04-0.04V/A(чувствительность из datasheet датчика); // +0.07 - поправочный коэффициент, чтобы выставить точный ноль;
+ if(wAt > 2) 
+     {
+     float gRwAt =real_gr / wAt ;     //Считаем эффективность
+     }
+    else  
+     {
+     float gRwAt = 0.0 ;     //выводим ноль
+     }
   
-  total= total + readings[index];       
-    index = index + 1;                    
-    if (index >= numReadings)              
-      index = 0;                           
-    average = total/numReadings;   //Smoothing algorithm (http://www.arduino.cc/en/Tutorial/Smoothing)    
-    currentValue= average;
   
-  dtostrf(currentValue, 6, 3, myStr);         //Подготовка 6 знакомест
-  lcd.setCursor(8, 0);                        //Переводим курсор
-  lcd.print(myStr);                           //выводим значение Ампер
-
+  char myStr[6];                                // текстовый массив для текста
   
-  float realU = float(inU) * 0.027425;
-  //float realI = float((inI)-512) * 0.69990375; 
-  
-  dtostrf(realU, 5, 1, myStr);                //Подготовка 5 знакомест
-  lcd.setCursor(0, 0);                        //Переводим курсор
-  lcd.print(myStr);                           //выводим значение вольт
+  dtostrf(real_u, 5, 1, myStr);                 //Подготовка 5 знакомест
+  lcd.setCursor(0, 0);                          //Переводим курсор
+  lcd.print(myStr);                             //выводим значение вольт
 
-  //dtostrf(realI, 5, 2, myStr);                //Подготовка 5 знакомест
-  //lcd.setCursor(9, 0);                        //Переводим курсор
-  //lcd.print(myStr);                           //выводим значение Ампер
+  dtostrf(real_i, 5, 1, myStr);                 //Подготовка 5 знакомест
+  lcd.setCursor(8, 0);                          //Переводим курсор
+  lcd.print(myStr);                             //выводим значение тока
 
-          // Считаем Мощность
-
-  float wAt = float(realU * currentValue) ;
-
-  dtostrf(wAt, 5, 1, myStr);                  //Подготовка 5 знакомест
-  lcd.setCursor(0, 1);                        //Переводим курсор
-  lcd.print(myStr);                           //выводим значение Ват
-
-         // Эффективность грамм на ват
-
-  
-  float gRwAt = float(ounces / wAt) ;
-
-  dtostrf(gRwAt, 5, 1, myStr);                  //Подготовка 5 знакомест
+  dtostrf(wAt, 4, 0, myStr);                    //Подготовка 5 знакомест
   lcd.setCursor(0, 1);                          //Переводим курсор
-  lcd.print(myStr);                             //выводим значение Ват
-        
+  lcd.print(myStr);                             //выводим значение мощности
 
- 
+  dtostrf(real_gr, 4, 0, myStr);                //Подготовка 5 знакомест
+  lcd.setCursor(10, 1);                          //Переводим курсор
+  lcd.print(myStr);                             //выводим значение тяга грамм
+
+  dtostrf(gRwAt, 4, 1, myStr);                  //Подготовка 5 знакомест
+  lcd.setCursor(5, 1);                          //Переводим курсор
+  lcd.print(myStr);                             //выводим значение грамм/ватт
 }
-
