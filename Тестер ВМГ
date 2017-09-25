@@ -97,11 +97,11 @@ float real_u = float(total_u) / 10 * 0.027425;
   
  if(wAt > 2) 
      {
-     float gRwAt =real_gr / wAt ;     //Считаем эффективность
+     gRwAt =real_gr / wAt ;     //Считаем эффективность
      }
     else  
      {
-     float gRwAt = 0.0 ;     //выводим ноль
+     gRwAt = 0.0 ;     //выводим ноль
      }
   
   
