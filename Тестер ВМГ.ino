@@ -23,6 +23,7 @@ byte bukva_IYI[8] = {B10001,B10001,B10001,B11001,B10101,B10101,B11001,B00000,}; 
 byte bukva_Yu[8]  = {B10010,B10101,B10101,B11101,B10101,B10101,B10010,B00000,}; // Буква "Ю"
 byte bukva_Ya[8]  = {B01111,B10001,B10001,B01111,B00101,B01001,B10001,B00000,}; // Буква "Я"
 
+
 //float calibration_factor = -15.9;       // калибровочная константа тензодатчика для весов 5кг
 float calibration_factor = -224.5;        // калибровочная константа тензодатчика-216.7для СТЕНДА -224,5 при длине луча 735 мм
 float units;
@@ -39,27 +40,31 @@ void setup()
   scale.tare();                              //Сбрасываем на 0
   scale.set_scale(calibration_factor);       //Применяем калибровку
 
+  
+
   lcd.createChar(1, bukva_Ya);      // Создаем символ под номером 1
   lcd.createChar(2, bukva_G);       // Создаем символ под номером 2
   lcd.createChar(3, bukva_I);       // Создаем символ под номером 3
   
   lcd.setCursor(15, 1);   // перевод курсора на строку 2, символ 11
-  lcd.print("\2");        // пишем Грамм 
+  lcd.print("g");        // пишем Грамм 
   lcd.setCursor(6, 0);    // перевод курсора 
-  lcd.print("V");         // пишем Вольт 
+  lcd.print("v");         // пишем Вольт 
   lcd.setCursor(15, 0);   // перевод курсора 
-  lcd.print("A");         // пишем Ампер 
-  lcd.setCursor(6, 1);    // перевод курсора 
-  lcd.print("W");         // пишем Ампер 
+  lcd.print("a");         // пишем Ампер 
+  lcd.setCursor(3, 1);    // перевод курсора 
+  lcd.print("w");         // пишем Мощность
+  lcd.setCursor(9, 1);    // перевод курсора 
+  lcd.print("q");         // пишем Эффективность
 }
 void loop()
 {            
           //Измеряем все что есть
   
-  float total_gr = 0.0;             //Переменная тяги
-  uint16_t total_i = 0;             //переменная тока
-  uint16_t total_u = 0;             //переменная напряжения
-  for (uint8_t i = 0; i < 10; i++)  // условие  цикла сложения
+  float total_gr = 0.0;              //Переменная тяги
+  uint16_t total_i = 0;              //переменная тока
+  uint16_t total_u = 0;              //переменная напряжения
+  for (uint8_t i = 0; i < 10; i++)   // условие  цикла сложения
    {
    total_gr += scale.get_units(1);   //Суммирование граммов
    total_i += analogRead(6);         //Суммирование тока
@@ -69,8 +74,8 @@ void loop()
           //вычисляем среднее значение
           
 float real_gr = total_gr / 10;
-float real_i = (float(total_i) / 10 - 512.0)*5.0/1024/0.0133;
-float real_u = float(total_u) / 10 * 0.027425;
+float real_i = (float(total_i) / 10 - 512.0)*5.0/1024/0.0133;     //усреднение тока и корректировка офсетного напряжения
+float real_u = float(total_u) / 10 * 0.027425;                    //Подсчет напряжение и корректировка коэффициентом
   
   
   float wAt = float(real_i * real_u) ;     //Считаем мощность
@@ -79,11 +84,11 @@ float real_u = float(total_u) / 10 * 0.027425;
   
  if(wAt > 2) 
      {
-     gRwAt =real_gr / wAt ;     //Считаем эффективность
+     gRwAt =real_gr / wAt ;                //Считаем эффективность
      }
     else  
      {
-     gRwAt = 0.0 ;              //выводим ноль
+     gRwAt = 0.0 ;                         //выводим ноль
      }
   
   
@@ -94,10 +99,10 @@ float real_u = float(total_u) / 10 * 0.027425;
   lcd.print(myStr);                             //выводим значение вольт
 
   dtostrf(real_i, 5, 1, myStr);                 //Подготовка 5 знакомест
-  lcd.setCursor(8, 0);                          //Переводим курсор
+  lcd.setCursor(9, 0);                          //Переводим курсор
   lcd.print(myStr);                             //выводим значение тока
 
-  dtostrf(wAt, 4, 0, myStr);                    //Подготовка 5 знакомест
+  dtostrf(wAt, 3, 0, myStr);                    //Подготовка 5 знакомест
   lcd.setCursor(0, 1);                          //Переводим курсор
   lcd.print(myStr);                             //выводим значение мощности
 
@@ -107,5 +112,7 @@ float real_u = float(total_u) / 10 * 0.027425;
 
   dtostrf(gRwAt, 4, 1, myStr);                  //Подготовка 5 знакомест
   lcd.setCursor(5, 1);                          //Переводим курсор
-  lcd.print(myStr);                             //выводим значение грамм/ватт
+  lcd.print(myStr);                             //выводим значение грамм/ватт 
+  
 }
+
